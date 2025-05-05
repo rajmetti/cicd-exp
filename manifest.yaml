@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-java-app
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-java-app
+  template:
+    metadata:
+      labels:
+        app: my-java-app
+    spec:
+      containers:
+        - name: my-java-app
+          image: my-java-app:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: JAVA_OPTS
+              value: "-Xmx512m -Xms256m"
+          volumeMounts:
+            - name: temp-data
+              mountPath: /app/data
+          resources:
+            limits:
+              memory: "1Gi"
+              ephemeral-storage: "2Gi"
+            requests:
+              memory: "512Mi"
+              ephemeral-storage: "1Gi"
+      volumes:
+        - name: temp-data
+          emptyDir:
+            medium: Memory # Optional: Use RAM for faster writes
+            sizeLimit: 1Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-java-app-service
+  namespace: default
+spec:
+  selector:
+    app: my-java-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+      nodePort: 30000
+  type: NodePort
